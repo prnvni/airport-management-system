@@ -11,6 +11,6 @@ public class JDBCGUI {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        (new Menu()).setVisible(true);
+        (new Dashboard()).setVisible(true);
     }
 }
