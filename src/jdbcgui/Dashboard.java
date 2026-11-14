@@ -34,6 +34,7 @@ public class Dashboard extends JFrame implements ActionListener {
 
     JLabel lblAirportCount = new JLabel("0", SwingConstants.CENTER);
     JLabel lblEmployeeCount = new JLabel("0", SwingConstants.CENTER);
+    JLabel lblGateCount = new JLabel("0", SwingConstants.CENTER);
 
     // airport card buttons
     JButton btnViewAirports = new JButton("View Airports");
@@ -47,7 +48,12 @@ public class Dashboard extends JFrame implements ActionListener {
     JButton btnUpdateEmployee = new JButton("Update Employee");
     JButton btnDeleteEmployee = new JButton("Delete Employee");
     JButton btnQualifications = new JButton("Update Qualifications");
-
+    
+    // gate card buttons
+    JButton btnViewGates = new JButton("View Gates");
+    JButton btnAddGate = new JButton("Add Gate");
+    JButton btnUpdateGate = new JButton("Update Gate");
+    JButton btnDeleteGate = new JButton("Delete Gate");
     JButton btnExit = new JButton("Exit");
 
     /** Builds the dashboard, connects to the database and loads the counts. */
@@ -66,7 +72,7 @@ public class Dashboard extends JFrame implements ActionListener {
         });
 
         pack();
-        setMinimumSize(new Dimension(800, 520));
+        setMinimumSize(new Dimension(1150, 520));
         setLocationRelativeTo(null); // center form in screen
     }
 
@@ -77,7 +83,7 @@ public class Dashboard extends JFrame implements ActionListener {
         title.setForeground(BLUE);
         title.setBorder(BorderFactory.createEmptyBorder(20, 10, 5, 10));
 
-        JPanel cards = new JPanel(new GridLayout(1, 2, 25, 0));
+        JPanel cards = new JPanel(new GridLayout(1, 3, 25, 0));
         cards.setBackground(BACKGROUND);
         cards.setBorder(BorderFactory.createEmptyBorder(15, 30, 15, 30));
         cards.add(makeCard("Airports", lblAirportCount, new JButton[] {
@@ -85,6 +91,8 @@ public class Dashboard extends JFrame implements ActionListener {
         cards.add(makeCard("Employees", lblEmployeeCount, new JButton[] {
             btnViewEmployees, btnAddEmployee, btnUpdateEmployee,
             btnDeleteEmployee, btnQualifications }));
+        cards.add(makeCard("Gates", lblGateCount, new JButton[] {
+            btnViewGates, btnAddGate, btnUpdateGate, btnDeleteGate }));
 
         btnExit.setFont(Util.LABEL_FONT);
         btnExit.addActionListener(this);
@@ -146,6 +154,11 @@ public class Dashboard extends JFrame implements ActionListener {
         } catch (SQLException e) {
             Util.sqlError(this, "reading the counts", e);
         }
+        try {
+            lblGateCount.setText("" + Util.count(dbCon, "SELECT COUNT(*) FROM gate"));
+        } catch (SQLException e) {
+            lblGateCount.setText("-");
+        }
     }
 
     /** Opens the form that matches the clicked button (or exits). */
@@ -182,6 +195,16 @@ public class Dashboard extends JFrame implements ActionListener {
             (new UpdateDeleteStaff()).setVisible(true);
         } else if (src == btnQualifications) {
             (new StaffQualifications()).setVisible(true);
+        } else if (src == btnViewGates) {
+            (new ViewTable("Gates",
+                    "SELECT g.airport_code AS \"Airport\", g.gate_no AS \"Gate No\", "
+                    + "g.terminal AS \"Terminal\" FROM gate g "
+                    + "ORDER BY g.airport_code, g.gate_no")).setVisible(true);
+        } else if (src == btnAddGate) {
+            (new AddGate()).setVisible(true);
+        } else if (src == btnUpdateGate || src == btnDeleteGate) {
+            // the form has both the Update and the Delete button
+            (new UpdateDeleteGate()).setVisible(true);
         }
     }
 }
