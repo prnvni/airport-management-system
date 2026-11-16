@@ -4,6 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -35,6 +37,7 @@ public class Dashboard extends JFrame implements ActionListener {
     JLabel lblAirportCount = new JLabel("0", SwingConstants.CENTER);
     JLabel lblEmployeeCount = new JLabel("0", SwingConstants.CENTER);
     JLabel lblGateCount = new JLabel("0", SwingConstants.CENTER);
+    JLabel lblAssignCount = new JLabel("0", SwingConstants.CENTER);
 
     // airport card buttons
     JButton btnViewAirports = new JButton("View Airports");
@@ -55,6 +58,12 @@ public class Dashboard extends JFrame implements ActionListener {
     JButton btnUpdateGate = new JButton("Update Gate");
     JButton btnDeleteGate = new JButton("Delete Gate");
     JButton btnExit = new JButton("Exit");
+    
+    // gate assignment card buttons
+    JButton btnViewAssignments = new JButton("View Assignments");
+    JButton btnAddAssignment = new JButton("Add Assignment");
+    JButton btnUpdateAssignment = new JButton("Update Assignment");
+    JButton btnDeleteAssignment = new JButton("Delete Assignment");
 
     /** Builds the dashboard, connects to the database and loads the counts. */
     public Dashboard() {
@@ -78,13 +87,13 @@ public class Dashboard extends JFrame implements ActionListener {
 
     /** Creates the title, the two cards and the exit button. */
     private void buildGui() {
-        JLabel title = new JLabel("Airport Operations Management System", SwingConstants.CENTER);
+        JLabel title = new JLabel("\u2708  Airport Operations Management System  \u2708", SwingConstants.CENTER);
         title.setFont(new Font("Tahoma", Font.BOLD, 30));
-        title.setForeground(BLUE);
+        title.setForeground(Color.WHITE);
         title.setBorder(BorderFactory.createEmptyBorder(20, 10, 5, 10));
 
-        JPanel cards = new JPanel(new GridLayout(1, 3, 25, 0));
-        cards.setBackground(BACKGROUND);
+        JPanel cards = new JPanel(new GridLayout(1, 4, 25, 0));
+        cards.setOpaque(false);
         cards.setBorder(BorderFactory.createEmptyBorder(15, 30, 15, 30));
         cards.add(makeCard("Airports", lblAirportCount, new JButton[] {
             btnViewAirports, btnAddAirport, btnUpdateAirport, btnDeleteAirport }));
@@ -93,22 +102,42 @@ public class Dashboard extends JFrame implements ActionListener {
             btnDeleteEmployee, btnQualifications }));
         cards.add(makeCard("Gates", lblGateCount, new JButton[] {
             btnViewGates, btnAddGate, btnUpdateGate, btnDeleteGate }));
+        cards.add(makeCard("Gate Assignments", lblAssignCount, new JButton[] {
+            btnViewAssignments, btnAddAssignment, btnUpdateAssignment, btnDeleteAssignment }));
 
         btnExit.setFont(Util.LABEL_FONT);
         btnExit.addActionListener(this);
         JPanel bottom = new JPanel();
-        bottom.setBackground(BACKGROUND);
+        bottom.setOpaque(false);
         bottom.add(btnExit);
 
         JPanel top = new JPanel(new BorderLayout());
-        top.setBackground(BACKGROUND);
+        top.setOpaque(false);
         top.add(title, BorderLayout.CENTER);
 
-        getContentPane().setBackground(BACKGROUND);
-        getContentPane().setLayout(new BorderLayout());
-        getContentPane().add(top, BorderLayout.NORTH);
-        getContentPane().add(cards, BorderLayout.CENTER);
-        getContentPane().add(bottom, BorderLayout.SOUTH);
+        // background picture (falls back to a plain light background if the file is missing)
+        java.net.URL url = getClass().getResource("/jdbcgui/background.jpg");
+        final java.awt.Image bg = (url == null) ? null : new javax.swing.ImageIcon(url).getImage();
+
+        JPanel sky = new JPanel(new BorderLayout()) {
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g;
+                if (bg != null) {
+                    g2.drawImage(bg, 0, 0, getWidth(), getHeight(), this);
+                    // dark see-through layer so the white title stays readable
+                    g2.setColor(new Color(0, 0, 0, 90));
+                    g2.fillRect(0, 0, getWidth(), getHeight());
+                } else {
+                    g2.setColor(BACKGROUND);
+                    g2.fillRect(0, 0, getWidth(), getHeight());
+                }
+            }
+        };
+        setContentPane(sky);
+        sky.add(top, BorderLayout.NORTH);
+        sky.add(cards, BorderLayout.CENTER);
+        sky.add(bottom, BorderLayout.SOUTH);
     }
 
     /** Creates one white card: name, big row count, then the column of buttons. */
@@ -159,6 +188,11 @@ public class Dashboard extends JFrame implements ActionListener {
         } catch (SQLException e) {
             lblGateCount.setText("-");
         }
+        try {
+            lblAssignCount.setText("" + Util.count(dbCon, "SELECT COUNT(*) FROM gate_assignment"));
+        } catch (SQLException e) {
+            lblAssignCount.setText("-");
+        }
     }
 
     /** Opens the form that matches the clicked button (or exits). */
@@ -205,6 +239,21 @@ public class Dashboard extends JFrame implements ActionListener {
         } else if (src == btnUpdateGate || src == btnDeleteGate) {
             // the form has both the Update and the Delete button
             (new UpdateDeleteGate()).setVisible(true);
+        } else if (src == btnViewAssignments) {
+            (new ViewTable("Gate Assignments",
+                    "SELECT ga.flight_number AS \"Flight\", f.dept_airport || ' to ' || f.arr_airport AS \"Route\", "
+                    + "ga.airport_code AS \"Airport\", ga.gate_no AS \"Gate No\", g.terminal AS \"Terminal\", "
+                    + "e.first_name || ' ' || e.last_name AS \"Employee\" "
+                    + "FROM gate_assignment ga "
+                    + "JOIN flight f ON f.flight_number = ga.flight_number "
+                    + "JOIN gate g ON g.airport_code = ga.airport_code AND g.gate_no = ga.gate_no "
+                    + "LEFT JOIN a_employee e ON e.emp_id = ga.emp_id "
+                    + "ORDER BY ga.flight_number, ga.airport_code")).setVisible(true);
+        } else if (src == btnAddAssignment) {
+            (new AddGateAssignment()).setVisible(true);
+        } else if (src == btnUpdateAssignment || src == btnDeleteAssignment) {
+            // the form has both the Update and the Delete button
+            (new UpdateDeleteGateAssignment()).setVisible(true);
         }
     }
 }
