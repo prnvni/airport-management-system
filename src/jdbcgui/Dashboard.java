@@ -65,6 +65,30 @@ public class Dashboard extends JFrame implements ActionListener {
     JButton btnUpdateAssignment = new JButton("Update Assignment");
     JButton btnDeleteAssignment = new JButton("Delete Assignment");
 
+    // ===== ADDED (flights section): labels =====
+    JLabel lblAirlineCount = new JLabel("0", SwingConstants.CENTER);
+    JLabel lblAircraftCount = new JLabel("0", SwingConstants.CENTER);
+    JLabel lblFlightCount = new JLabel("0", SwingConstants.CENTER);
+ 
+    // ===== ADDED (flights section): airline card buttons =====
+    JButton btnViewAirlines = new JButton("View Airlines");
+    JButton btnAddAirline = new JButton("Add Airline");
+    JButton btnUpdateAirline = new JButton("Update Airline");
+    JButton btnDeleteAirline = new JButton("Delete Airline");
+ 
+    // ===== ADDED (flights section): aircraft card buttons =====
+    JButton btnViewAircraft = new JButton("View Aircraft");
+    JButton btnAddAircraft = new JButton("Add Aircraft");
+    JButton btnUpdateAircraft = new JButton("Update Aircraft");
+    JButton btnDeleteAircraft = new JButton("Delete Aircraft");
+ 
+    // ===== ADDED (flights section): flight card buttons =====
+    JButton btnViewFlights = new JButton("View Flights");
+    JButton btnAddFlight = new JButton("Add Flight");
+    JButton btnUpdateFlight = new JButton("Update Flight");
+    JButton btnDeleteFlight = new JButton("Delete Flight");
+    JButton btnFlightCrew = new JButton("Manage Crew");
+
     /** Builds the dashboard, connects to the database and loads the counts. */
     public Dashboard() {
         setTitle("Airport Management - Dashboard");
@@ -92,7 +116,7 @@ public class Dashboard extends JFrame implements ActionListener {
         title.setForeground(Color.WHITE);
         title.setBorder(BorderFactory.createEmptyBorder(20, 10, 5, 10));
 
-        JPanel cards = new JPanel(new GridLayout(1, 4, 25, 0));
+        JPanel cards = new JPanel(new GridLayout(2, 5, 20, 20));
         cards.setOpaque(false);
         cards.setBorder(BorderFactory.createEmptyBorder(15, 30, 15, 30));
         cards.add(makeCard("Airports", lblAirportCount, new JButton[] {
@@ -104,6 +128,22 @@ public class Dashboard extends JFrame implements ActionListener {
             btnViewGates, btnAddGate, btnUpdateGate, btnDeleteGate }));
         cards.add(makeCard("Gate Assignments", lblAssignCount, new JButton[] {
             btnViewAssignments, btnAddAssignment, btnUpdateAssignment, btnDeleteAssignment }));
+        // ===== ADDED (flights section): cards =====
+        cards.add(makeCard("Airlines", lblAirlineCount, new JButton[] {
+            btnViewAirlines, btnAddAirline, btnUpdateAirline, btnDeleteAirline }));
+        cards.add(makeCard("Aircraft", lblAircraftCount, new JButton[] {
+            btnViewAircraft, btnAddAircraft, btnUpdateAircraft, btnDeleteAircraft }));
+        cards.add(makeCard("Flights", lblFlightCount, new JButton[] {
+            btnViewFlights, btnAddFlight, btnUpdateFlight, btnDeleteFlight, btnFlightCrew }));
+
+        // ADDED: transparent scroll pane so nothing is cut off on small screens
+        JScrollPane cardScroll = new JScrollPane(cards);
+        cardScroll.setOpaque(false);
+        cardScroll.getViewport().setOpaque(false);
+        cardScroll.setBorder(null);
+        cardScroll.getVerticalScrollBar().setUnitIncrement(16);
+
+
 
         btnExit.setFont(Util.LABEL_FONT);
         btnExit.addActionListener(this);
@@ -193,6 +233,19 @@ public class Dashboard extends JFrame implements ActionListener {
         } catch (SQLException e) {
             lblAssignCount.setText("-");
         }
+        // ===== ADDED (flights section) =====
+        setCount(lblAirlineCount, "airline");
+        setCount(lblAircraftCount, "aircraft");
+        setCount(lblFlightCount, "flight");
+    }
+
+    /** ADDED: shows the row count of one table, or "-" if the table cannot be read. */
+    private void setCount(JLabel label, String table) {
+        try {
+            label.setText("" + Util.count(dbCon, "SELECT COUNT(*) FROM " + table));
+        } catch (SQLException e) {
+            label.setText("-");
+        }
     }
 
     /** Opens the form that matches the clicked button (or exits). */
@@ -254,6 +307,50 @@ public class Dashboard extends JFrame implements ActionListener {
         } else if (src == btnUpdateAssignment || src == btnDeleteAssignment) {
             // the form has both the Update and the Delete button
             (new UpdateDeleteGateAssignment()).setVisible(true);
+        // ===== ADDED (flights section): airlines =====
+        } else if (src == btnViewAirlines) {
+            (new ViewTable("Airlines",
+                    "SELECT airline_code AS \"Code\", airline_name AS \"Name\", "
+                    + "airline_country AS \"Country\" FROM airline "
+                    + "ORDER BY airline_code")).setVisible(true);
+        } else if (src == btnAddAirline) {
+            (new AddAirline()).setVisible(true);
+        } else if (src == btnUpdateAirline || src == btnDeleteAirline) {
+            (new UpdateDeleteAirline()).setVisible(true);
+ 
+        // ===== ADDED (flights section): aircraft =====
+        } else if (src == btnViewAircraft) {
+            (new ViewTable("Aircraft",
+                    "SELECT a.aircraft_id AS \"ID\", a.model AS \"Model\", "
+                    + "a.capacity AS \"Capacity\", a.manufacture_year AS \"Year\", "
+                    + "al.airline_name AS \"Airline\" "
+                    + "FROM aircraft a JOIN airline al ON al.airline_code = a.airline_code "
+                    + "ORDER BY a.aircraft_id")).setVisible(true);
+        } else if (src == btnAddAircraft) {
+            (new AddAircraft()).setVisible(true);
+        } else if (src == btnUpdateAircraft || src == btnDeleteAircraft) {
+            (new UpdateDeleteAircraft()).setVisible(true);
+ 
+        // ===== ADDED (flights section): flights =====
+        } else if (src == btnViewFlights) {
+            (new ViewTable("Flights",
+                    "SELECT f.flight_number AS \"Flight\", f.dept_airport AS \"From\", "
+                    + "f.arr_airport AS \"To\", "
+                    + "TO_CHAR(f.dept_time, 'YYYY-MM-DD HH24:MI') AS \"Departure\", "
+                    + "TO_CHAR(f.arr_time, 'YYYY-MM-DD HH24:MI') AS \"Arrival\", "
+                    + "ROUND((CAST(f.arr_time AS DATE) - CAST(f.dept_time AS DATE)) * 24, 2) AS \"Duration (h)\", "
+                    + "f.status AS \"Status\", a.model AS \"Aircraft\", al.airline_name AS \"Airline\" "
+                    + "FROM flight f "
+                    + "JOIN aircraft a ON a.aircraft_id = f.aircraft_id "
+                    + "JOIN airline al ON al.airline_code = a.airline_code "
+                    + "ORDER BY f.dept_time")).setVisible(true);
+        } else if (src == btnAddFlight) {
+            (new AddFlight()).setVisible(true);
+        } else if (src == btnUpdateFlight || src == btnDeleteFlight) {
+            (new UpdateDeleteFlight()).setVisible(true);
+        } else if (src == btnFlightCrew) {
+            (new FlightCrew()).setVisible(true);
         }
+    }
     }
 }
