@@ -164,7 +164,7 @@ public class PassengerPhones extends JFrame implements ActionListener, ListSelec
     private String validPhone() {
         lblPhoneError.setVisible(false);
         String p = txtPhone.getText().trim();
-        if (!p.matches("[+0-9 ()-]{5,20}")) {
+        if (!p.matches("[+0-9 ()-]{5,20}") || p.replaceAll("[^0-9]", "").length() < 5) {
             Util.showFieldError(lblPhoneError, "Phone must be 5 to 20 valid characters (+, digits, spaces, -)");
             return null;
         }

@@ -113,6 +113,7 @@ public class AddPassenger extends JFrame implements ActionListener {
         txtCountry.setText("");
         txtDob.setText("");
         clearErrorLabels();
+        pack();
     }
 
     /**
@@ -129,28 +130,25 @@ public class AddPassenger extends JFrame implements ActionListener {
         boolean ok = true;
         clearErrorLabels();
 
-        if (!passport.matches("[A-Z0-9]{4,15}")) {
-            Util.showFieldError(lblPassportError, "Passport must be 4 to 15 letters/digits!");
+        String namePattern = "[\\p{L}][\\p{L} .'-]*";
+        if (first.length() < 1 || first.length() > 30 || !first.matches(namePattern)) {
+            Util.showFieldError(lblFirstError, "First name must be 1 to 30 letters!");
             ok = false;
         }
-        if (first.length() < 1 || first.length() > 30) {
-            Util.showFieldError(lblFirstError, "First name must be 1 to 30 characters!");
-            ok = false;
-        }
-        if (last.length() < 1 || last.length() > 30) {
-            Util.showFieldError(lblLastError, "Last name must be 1 to 30 characters!");
+        if (last.length() < 1 || last.length() > 30 || !last.matches(namePattern)) {
+            Util.showFieldError(lblLastError, "Last name must be 1 to 30 letters!");
             ok = false;
         }
         if (street.length() > 60) {
             Util.showFieldError(lblStreetError, "Street must be at most 60 characters!");
             ok = false;
         }
-        if (city.length() > 40) {
-            Util.showFieldError(lblCityError, "City must be at most 40 characters!");
+        if (city.length() > 40 || (city.length() > 0 && !city.matches(namePattern))) {
+            Util.showFieldError(lblCityError, "City must be letters only (max 40)!");
             ok = false;
         }
-        if (country.length() > 40) {
-            Util.showFieldError(lblCountryError, "Country must be at most 40 characters!");
+        if (country.length() > 40 || (country.length() > 0 && !country.matches(namePattern))) {
+            Util.showFieldError(lblCountryError, "Country must be letters only (max 40)!");
             ok = false;
         }
 
@@ -161,15 +159,20 @@ public class AddPassenger extends JFrame implements ActionListener {
         } else if (dob.toLocalDate().isAfter(LocalDate.now())) {
             Util.showFieldError(lblDobError, "Date of birth cannot be in the future!");
             ok = false;
+        } else if (dob.toLocalDate().isBefore(LocalDate.of(1900, 1, 1))) {
+            Util.showFieldError(lblDobError, "Date of birth must be 1900 or later!");
+            ok = false;
         }
 
         if (!ok) {
+            pack();
             return;
         }
 
         try {
             if (Util.count(dbCon, "SELECT COUNT(*) FROM passenger WHERE UPPER(passport_no) = ?", passport) > 0) {
                 Util.showFieldError(lblPassportError, "This passport number already exists");
+                pack();
                 return;
             }
             Util.update(dbCon, "INSERT INTO passenger (passport_no, first_name, last_name, street, city, country, dob) "

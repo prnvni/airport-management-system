@@ -236,24 +236,25 @@ public class UpdateDeletePassenger extends JFrame implements ActionListener {
         lblCountryError.setVisible(false);
         lblDobError.setVisible(false);
 
-        if (first.length() < 1 || first.length() > 30) {
-            Util.showFieldError(lblFirstError, "First name must be 1 to 30 characters!");
+        String namePattern = "[\\p{L}][\\p{L} .'-]*";
+        if (first.length() < 1 || first.length() > 30 || !first.matches(namePattern)) {
+            Util.showFieldError(lblFirstError, "First name must be 1 to 30 letters!");
             ok = false;
         }
-        if (last.length() < 1 || last.length() > 30) {
-            Util.showFieldError(lblLastError, "Last name must be 1 to 30 characters!");
+        if (last.length() < 1 || last.length() > 30 || !last.matches(namePattern)) {
+            Util.showFieldError(lblLastError, "Last name must be 1 to 30 letters!");
             ok = false;
         }
         if (street.length() > 60) {
             Util.showFieldError(lblStreetError, "Street must be at most 60 characters!");
             ok = false;
         }
-        if (city.length() > 40) {
-            Util.showFieldError(lblCityError, "City must be at most 40 characters!");
+        if (city.length() > 40 || (city.length() > 0 && !city.matches(namePattern))) {
+            Util.showFieldError(lblCityError, "City must be letters only (max 40)!");
             ok = false;
         }
-        if (country.length() > 40) {
-            Util.showFieldError(lblCountryError, "Country must be at most 40 characters!");
+        if (country.length() > 40 || (country.length() > 0 && !country.matches(namePattern))) {
+            Util.showFieldError(lblCountryError, "Country must be letters only (max 40)!");
             ok = false;
         }
 
@@ -263,6 +264,9 @@ public class UpdateDeletePassenger extends JFrame implements ActionListener {
             ok = false;
         } else if (dob.toLocalDate().isAfter(LocalDate.now())) {
             Util.showFieldError(lblDobError, "Date of birth cannot be in the future.");
+            ok = false;
+        } else if (dob.toLocalDate().isBefore(LocalDate.of(1900, 1, 1))) {
+            Util.showFieldError(lblDobError, "Date of birth must be 1900 or later.");
             ok = false;
         }
 

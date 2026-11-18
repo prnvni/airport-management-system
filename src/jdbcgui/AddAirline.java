@@ -95,8 +95,8 @@ public class AddAirline extends JFrame implements ActionListener {
             Util.showFieldError(lblNameError, "Name must be 1 to 60 characters");
             ok = false;
         }
-        if (country.length() < 1 || country.length() > 40) {
-            Util.showFieldError(lblCountryError, "Country must be 1 to 40 characters");
+        if (country.length() < 1 || country.length() > 40 || !country.matches("[\\p{L}][\\p{L} .'-]*")) {
+            Util.showFieldError(lblCountryError, "Country must be 1 to 40 letters");
             ok = false;
         }
         return ok;
