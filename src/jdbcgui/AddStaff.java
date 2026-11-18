@@ -57,7 +57,10 @@ public class AddStaff extends JFrame implements ActionListener {
         setResizable(false);
         setLocationRelativeTo(null); // center form in screen
     }
-
+/** True if the text is 1 to 30 characters and contains no digits. */
+static boolean isText(String s) {
+    return s.length() >= 1 && s.length() <= 30 && !s.matches(".*[0-9].*");
+}
     /** Creates and lays out all the components of the form. */
     private void buildGui() {
         JPanel form = Util.makeFormPanel();
@@ -168,18 +171,19 @@ public class AddStaff extends JFrame implements ActionListener {
             Util.showFieldError(lblIdError, "ID must be a number from 1 to 999999");
             ok = false;
         }
-        if (first.length() < 1 || first.length() > 30) {
-            Util.showFieldError(lblFirstError, "First name must be 1 to 30 characters");
+        if (!isText(first)) {
+            Util.showFieldError(lblFirstError, "First name must be text (1 to 30 characters, no numbers)");
             ok = false;
         }
-        if (last.length() < 1 || last.length() > 30) {
-            Util.showFieldError(lblLastError, "Last name must be 1 to 30 characters");
+        if (!isText(last)) {
+            Util.showFieldError(lblLastError, "Last name must be text (1 to 30 characters, no numbers)");
             ok = false;
         }
-        if (role.length() < 1 || role.length() > 30) {
-            Util.showFieldError(lblRoleError, "Role must be 1 to 30 characters");
+        if (!isText(role)) {
+            Util.showFieldError(lblRoleError, "Role must be text (1 to 30 characters, no numbers)");
             ok = false;
         }
+        
         BigDecimal salary = parseSalary(txtSalary.getText());
         if (salary == null) {
             Util.showFieldError(lblSalaryError, "Salary must be a positive number (max 2 decimals)");
