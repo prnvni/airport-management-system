@@ -195,4 +195,31 @@ public class Util {
     static final String EMPLOYEE_NAMES_SQL
             = "SELECT emp_id, first_name || ' ' || last_name || ' (ID ' || emp_id || ')' "
             + "FROM a_employee ";
+    
+    
+    /**
+     * SQL for a list of passengers: key = passport_no, name = "First Last (Passport)".
+     */
+    static final String PASSENGER_NAMES_SQL
+            = "SELECT passport_no, first_name || ' ' || last_name || ' (' || passport_no || ')' "
+            + "FROM passenger ";
+
+    /**
+     * Parses a strict YYYY-MM-DD date string into java.sql.Date. Returns null
+     * if the format or calendar date (like Feb 30) is invalid.
+     */
+    static java.sql.Date parseSqlDate(String text) {
+        if (text == null) {
+            return null;
+        }
+        try {
+            java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter
+                    .ofPattern("uuuu-MM-dd")
+                    .withResolverStyle(java.time.format.ResolverStyle.STRICT);
+            java.time.LocalDate d = java.time.LocalDate.parse(text.trim(), fmt);
+            return java.sql.Date.valueOf(d);
+        } catch (java.time.format.DateTimeParseException e) {
+            return null;
+        }
+    }
 }

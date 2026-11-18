@@ -17,6 +17,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
 import javax.swing.WindowConstants;
 
@@ -38,6 +39,8 @@ public class Dashboard extends JFrame implements ActionListener {
     JLabel lblEmployeeCount = new JLabel("0", SwingConstants.CENTER);
     JLabel lblGateCount = new JLabel("0", SwingConstants.CENTER);
     JLabel lblAssignCount = new JLabel("0", SwingConstants.CENTER);
+    JLabel lblPassengerCount = new JLabel("0", SwingConstants.CENTER);
+    JLabel lblBookingCount = new JLabel("0", SwingConstants.CENTER);
 
     // airport card buttons
     JButton btnViewAirports = new JButton("View Airports");
@@ -51,45 +54,63 @@ public class Dashboard extends JFrame implements ActionListener {
     JButton btnUpdateEmployee = new JButton("Update Employee");
     JButton btnDeleteEmployee = new JButton("Delete Employee");
     JButton btnQualifications = new JButton("Update Qualifications");
-    
+
     // gate card buttons
     JButton btnViewGates = new JButton("View Gates");
     JButton btnAddGate = new JButton("Add Gate");
     JButton btnUpdateGate = new JButton("Update Gate");
     JButton btnDeleteGate = new JButton("Delete Gate");
-    JButton btnExit = new JButton("Exit");
-    
+
     // gate assignment card buttons
     JButton btnViewAssignments = new JButton("View Assignments");
     JButton btnAddAssignment = new JButton("Add Assignment");
     JButton btnUpdateAssignment = new JButton("Update Assignment");
     JButton btnDeleteAssignment = new JButton("Delete Assignment");
 
-    // ===== ADDED (flights section): labels =====
+    // flights labels 
     JLabel lblAirlineCount = new JLabel("0", SwingConstants.CENTER);
     JLabel lblAircraftCount = new JLabel("0", SwingConstants.CENTER);
     JLabel lblFlightCount = new JLabel("0", SwingConstants.CENTER);
- 
-    // ===== ADDED (flights section): airline card buttons =====
+
+    // airline card buttons 
     JButton btnViewAirlines = new JButton("View Airlines");
     JButton btnAddAirline = new JButton("Add Airline");
     JButton btnUpdateAirline = new JButton("Update Airline");
     JButton btnDeleteAirline = new JButton("Delete Airline");
- 
-    // ===== ADDED (flights section): aircraft card buttons =====
+    
+    // aircraft card buttons 
     JButton btnViewAircraft = new JButton("View Aircraft");
     JButton btnAddAircraft = new JButton("Add Aircraft");
     JButton btnUpdateAircraft = new JButton("Update Aircraft");
     JButton btnDeleteAircraft = new JButton("Delete Aircraft");
- 
-    // ===== ADDED (flights section): flight card buttons =====
+    
+    // flight card buttons 
     JButton btnViewFlights = new JButton("View Flights");
     JButton btnAddFlight = new JButton("Add Flight");
     JButton btnUpdateFlight = new JButton("Update Flight");
     JButton btnDeleteFlight = new JButton("Delete Flight");
     JButton btnFlightCrew = new JButton("Manage Crew");
+    
+    
+    // passenger card buttons
+    JButton btnViewPassengers = new JButton("View / Search Passengers");
+    JButton btnAddPassenger = new JButton("Add Passenger");
+    JButton btnUpdatePassenger = new JButton("Update Passenger");
+    JButton btnDeletePassenger = new JButton("Delete Passenger");
+    JButton btnPassengerPhones = new JButton("Passenger Phones");
 
-    /** Builds the dashboard, connects to the database and loads the counts. */
+    // booking card buttons
+    JButton btnViewBookings = new JButton("View / Search Bookings");
+    JButton btnAddBooking = new JButton("Add Booking");
+    JButton btnUpdateBooking = new JButton("Update Booking");
+    JButton btnDeleteBooking = new JButton("Delete Booking");
+    JButton btnFlightBookings = new JButton("Flight Bookings");
+
+    JButton btnExit = new JButton("Exit");
+
+    /**
+     * Builds the dashboard, connects to the database and loads the counts.
+     */
     public Dashboard() {
         setTitle("Airport Management - Dashboard");
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -105,46 +126,53 @@ public class Dashboard extends JFrame implements ActionListener {
         });
 
         pack();
-        setMinimumSize(new Dimension(1150, 520));
+        setMinimumSize(new Dimension(1180, 740));
         setLocationRelativeTo(null); // center form in screen
     }
 
-    /** Creates the title, the two cards and the exit button. */
+    /**
+     * Creates the title, the two cards and the exit button.
+     */
     private void buildGui() {
         JLabel title = new JLabel("\u2708  Airport Operations Management System  \u2708", SwingConstants.CENTER);
         title.setFont(new Font("Tahoma", Font.BOLD, 30));
         title.setForeground(Color.WHITE);
-        title.setBorder(BorderFactory.createEmptyBorder(20, 10, 5, 10));
+        title.setBorder(BorderFactory.createEmptyBorder(15, 10, 5, 10));
 
-        JPanel cards = new JPanel(new GridLayout(2, 5, 20, 20));
+        JPanel cards = new JPanel(new GridLayout(2, 3, 25, 20));
         cards.setOpaque(false);
-        cards.setBorder(BorderFactory.createEmptyBorder(15, 30, 15, 30));
-        cards.add(makeCard("Airports", lblAirportCount, new JButton[] {
-            btnViewAirports, btnAddAirport, btnUpdateAirport, btnDeleteAirport }));
-        cards.add(makeCard("Employees", lblEmployeeCount, new JButton[] {
-            btnViewEmployees, btnAddEmployee, btnUpdateEmployee,
-            btnDeleteEmployee, btnQualifications }));
-        cards.add(makeCard("Gates", lblGateCount, new JButton[] {
-            btnViewGates, btnAddGate, btnUpdateGate, btnDeleteGate }));
-        cards.add(makeCard("Gate Assignments", lblAssignCount, new JButton[] {
-            btnViewAssignments, btnAddAssignment, btnUpdateAssignment, btnDeleteAssignment }));
-        // ===== ADDED (flights section): cards =====
-        cards.add(makeCard("Airlines", lblAirlineCount, new JButton[] {
-            btnViewAirlines, btnAddAirline, btnUpdateAirline, btnDeleteAirline }));
-        cards.add(makeCard("Aircraft", lblAircraftCount, new JButton[] {
-            btnViewAircraft, btnAddAircraft, btnUpdateAircraft, btnDeleteAircraft }));
-        cards.add(makeCard("Flights", lblFlightCount, new JButton[] {
-            btnViewFlights, btnAddFlight, btnUpdateFlight, btnDeleteFlight, btnFlightCrew }));
+        cards.setBorder(BorderFactory.createEmptyBorder(10, 30, 10, 30));
 
-        // ADDED: transparent scroll pane so nothing is cut off on small screens
+        cards.add(makeCard("Airports", lblAirportCount, new JButton[]{
+            btnViewAirports, btnAddAirport, btnUpdateAirport, btnDeleteAirport}));
+        cards.add(makeCard("Employees", lblEmployeeCount, new JButton[]{
+            btnViewEmployees, btnAddEmployee, btnUpdateEmployee,
+            btnDeleteEmployee, btnQualifications}));
+        cards.add(makeCard("Gates", lblGateCount, new JButton[]{
+            btnViewGates, btnAddGate, btnUpdateGate, btnDeleteGate}));
+        cards.add(makeCard("Gate Assignments", lblAssignCount, new JButton[]{
+            btnViewAssignments, btnAddAssignment, btnUpdateAssignment, btnDeleteAssignment}));
+        cards.add(makeCard("Airlines", lblAirlineCount, new JButton[]{
+            btnViewAirlines, btnAddAirline, btnUpdateAirline, btnDeleteAirline}));
+        cards.add(makeCard("Aircraft", lblAircraftCount, new JButton[]{
+            btnViewAircraft, btnAddAircraft, btnUpdateAircraft, btnDeleteAircraft}));
+        cards.add(makeCard("Flights", lblFlightCount, new JButton[]{
+            btnViewFlights, btnAddFlight, btnUpdateFlight, btnDeleteFlight, btnFlightCrew}));
+        cards.add(makeCard("Passengers", lblPassengerCount, new JButton[]{
+            btnViewPassengers, btnAddPassenger, btnUpdatePassenger,
+            btnDeletePassenger, btnPassengerPhones}));
+        cards.add(makeCard("Bookings", lblBookingCount, new JButton[]{
+            btnViewBookings, btnAddBooking, btnUpdateBooking,
+            btnDeleteBooking, btnFlightBookings}));
+
+        
+        // transparent scroll pane so nothing is cut off on small screens
         JScrollPane cardScroll = new JScrollPane(cards);
         cardScroll.setOpaque(false);
         cardScroll.getViewport().setOpaque(false);
         cardScroll.setBorder(null);
         cardScroll.getVerticalScrollBar().setUnitIncrement(16);
-
-
-
+        
         btnExit.setFont(Util.LABEL_FONT);
         btnExit.addActionListener(this);
         JPanel bottom = new JPanel();
@@ -180,12 +208,14 @@ public class Dashboard extends JFrame implements ActionListener {
         sky.add(bottom, BorderLayout.SOUTH);
     }
 
-    /** Creates one white card: name, big row count, then the column of buttons. */
+    /**
+     * Creates one white card: name, big row count, then the column of buttons.
+     */
     private JPanel makeCard(String name, JLabel countLabel, JButton[] buttons) {
         JLabel lblName = new JLabel(name, SwingConstants.CENTER);
-        lblName.setFont(new Font("Tahoma", Font.BOLD, 24));
+        lblName.setFont(new Font("Tahoma", Font.BOLD, 22));
 
-        countLabel.setFont(new Font("Tahoma", Font.BOLD, 56));
+        countLabel.setFont(new Font("Tahoma", Font.BOLD, 44));
         countLabel.setForeground(BLUE);
 
         JPanel head = new JPanel(new GridLayout(2, 1));
@@ -193,7 +223,7 @@ public class Dashboard extends JFrame implements ActionListener {
         head.add(lblName);
         head.add(countLabel);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(buttons.length, 1, 0, 8));
+        JPanel buttonPanel = new JPanel(new GridLayout(buttons.length, 1, 0, 6));
         buttonPanel.setOpaque(false);
         for (int i = 0; i < buttons.length; i++) {
             buttons[i].setFont(Util.LABEL_FONT);
@@ -202,17 +232,19 @@ public class Dashboard extends JFrame implements ActionListener {
             buttonPanel.add(buttons[i]);
         }
 
-        JPanel card = new JPanel(new BorderLayout(0, 15));
+        JPanel card = new JPanel(new BorderLayout(0, 10));
         card.setBackground(Color.WHITE);
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(200, 200, 200)),
-                BorderFactory.createEmptyBorder(20, 25, 20, 25)));
+                BorderFactory.createEmptyBorder(14, 20, 14, 20)));
         card.add(head, BorderLayout.NORTH);
         card.add(buttonPanel, BorderLayout.CENTER);
         return card;
     }
 
-    /** Reads the number of airports and employees from the database. */
+    /**
+     * Reads the number of airports and employees from the database.
+     */
     private void refreshCounts() {
         if (dbCon == null) {
             return;
@@ -233,13 +265,26 @@ public class Dashboard extends JFrame implements ActionListener {
         } catch (SQLException e) {
             lblAssignCount.setText("-");
         }
-        // ===== ADDED (flights section) =====
+        try {
+            lblPassengerCount.setText("" + Util.count(dbCon, "SELECT COUNT(*) FROM passenger"));
+        } catch (SQLException e) {
+            lblPassengerCount.setText("-");
+        }
+        try {
+            lblBookingCount.setText("" + Util.count(dbCon, "SELECT COUNT(*) FROM booking"));
+        } catch (SQLException e) {
+            lblBookingCount.setText("-");
+        }
+        
+        // (flights section)
         setCount(lblAirlineCount, "airline");
         setCount(lblAircraftCount, "aircraft");
         setCount(lblFlightCount, "flight");
     }
 
-    /** ADDED: shows the row count of one table, or "-" if the table cannot be read. */
+    /**
+     * Shows the row count of 1 table, or "-" if the table cannot be read.
+     */
     private void setCount(JLabel label, String table) {
         try {
             label.setText("" + Util.count(dbCon, "SELECT COUNT(*) FROM " + table));
@@ -247,8 +292,10 @@ public class Dashboard extends JFrame implements ActionListener {
             label.setText("-");
         }
     }
-
-    /** Opens the form that matches the clicked button (or exits). */
+    
+    /**
+     * Opens the form that matches the clicked button (or exits).
+     */
     public void actionPerformed(ActionEvent e) {
         Object src = e.getSource();
 
@@ -307,7 +354,6 @@ public class Dashboard extends JFrame implements ActionListener {
         } else if (src == btnUpdateAssignment || src == btnDeleteAssignment) {
             // the form has both the Update and the Delete button
             (new UpdateDeleteGateAssignment()).setVisible(true);
-        // ===== ADDED (flights section): airlines =====
         } else if (src == btnViewAirlines) {
             (new ViewTable("Airlines",
                     "SELECT airline_code AS \"Code\", airline_name AS \"Name\", "
@@ -317,8 +363,6 @@ public class Dashboard extends JFrame implements ActionListener {
             (new AddAirline()).setVisible(true);
         } else if (src == btnUpdateAirline || src == btnDeleteAirline) {
             (new UpdateDeleteAirline()).setVisible(true);
- 
-        // ===== ADDED (flights section): aircraft =====
         } else if (src == btnViewAircraft) {
             (new ViewTable("Aircraft",
                     "SELECT a.aircraft_id AS \"ID\", a.model AS \"Model\", "
@@ -330,8 +374,6 @@ public class Dashboard extends JFrame implements ActionListener {
             (new AddAircraft()).setVisible(true);
         } else if (src == btnUpdateAircraft || src == btnDeleteAircraft) {
             (new UpdateDeleteAircraft()).setVisible(true);
- 
-        // ===== ADDED (flights section): flights =====
         } else if (src == btnViewFlights) {
             (new ViewTable("Flights",
                     "SELECT f.flight_number AS \"Flight\", f.dept_airport AS \"From\", "
@@ -350,7 +392,36 @@ public class Dashboard extends JFrame implements ActionListener {
             (new UpdateDeleteFlight()).setVisible(true);
         } else if (src == btnFlightCrew) {
             (new FlightCrew()).setVisible(true);
+        } else if (src == btnViewPassengers) {
+            (new ViewTable("Passengers",
+                    "SELECT p.passport_no AS \"Passport No\", "
+                    + "p.first_name || ' ' || p.last_name AS \"Full Name\", "
+                    + "p.city AS \"City\", p.country AS \"Country\", "
+                    + "TO_CHAR(p.dob, 'YYYY-MM-DD') AS \"DOB\", "
+                    + "TRUNC(MONTHS_BETWEEN(SYSDATE, p.dob) / 12) AS \"Age\" "
+                    + "FROM passenger p ORDER BY p.passport_no")).setVisible(true);
+        } else if (src == btnAddPassenger) {
+            (new AddPassenger()).setVisible(true);
+        } else if (src == btnUpdatePassenger || src == btnDeletePassenger) {
+            (new UpdateDeletePassenger()).setVisible(true);
+        } else if (src == btnPassengerPhones) {
+            (new PassengerPhones()).setVisible(true);
+        } else if (src == btnViewBookings) {
+            (new ViewTable("Bookings",
+                    "SELECT b.booking_id AS \"Booking ID\", "
+                    + "p.first_name || ' ' || p.last_name || ' (' || b.passport_no || ')' AS \"Passenger\", "
+                    + "TO_CHAR(b.booking_date, 'YYYY-MM-DD') AS \"Booking Date\", "
+                    + "b.amount_paid AS \"Amount Paid\", "
+                    + "NVL((SELECT LISTAGG(fb.flight_number, ', ') WITHIN GROUP (ORDER BY fb.flight_number) "
+                    + "     FROM flight_booking fb WHERE fb.booking_id = b.booking_id), 'None') AS \"Flights\" "
+                    + "FROM booking b JOIN passenger p ON p.passport_no = b.passport_no "
+                    + "ORDER BY b.booking_id")).setVisible(true);
+        } else if (src == btnAddBooking) {
+            (new AddBooking()).setVisible(true);
+        } else if (src == btnUpdateBooking || src == btnDeleteBooking) {
+            (new UpdateDeleteBooking()).setVisible(true);
+        } else if (src == btnFlightBookings) {
+            (new FlightBookings()).setVisible(true);
         }
-    }
     }
 }
