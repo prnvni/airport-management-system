@@ -19,8 +19,9 @@ import javax.swing.WindowConstants;
  * table (which flight uses which gate, and which employee handles it).
  * All three combo boxes show names; the matching keys are kept in lists in
  * the same order. The gate list only shows the gates of the selected flight's
- * departure and arrival airports. The employee is optional.
- * The primary key is (flight_number, airport_code, gate_no).
+ * departure and arrival airports. Cancelled flights are not listed, and the
+ * employee must work at the airport of the chosen gate.
+ * The primary key is (flight_number, airport_code, gate_no, emp_id).
  */
 public class AddGateAssignment extends JFrame implements ActionListener {
 
@@ -33,6 +34,7 @@ public class AddGateAssignment extends JFrame implements ActionListener {
     JComboBox<String> cmbGate = new JComboBox<String>();
     JComboBox<String> cmbEmployee = new JComboBox<String>();
     JLabel lblGateError = Util.makeErrorLabel();
+    JLabel lblEmpError = Util.makeErrorLabel();
     JButton btnAdd = new JButton("Add");
     JButton btnClear = new JButton("Clear");
 
@@ -56,7 +58,7 @@ public class AddGateAssignment extends JFrame implements ActionListener {
         JPanel form = Util.makeFormPanel();
         Util.addRow(form, 0, "Flight:", cmbFlight, null);
         Util.addRow(form, 1, "Gate:", cmbGate, lblGateError);
-        Util.addRow(form, 2, "Employee (optional):", cmbEmployee, null);
+        Util.addRow(form, 2, "Employee:", cmbEmployee, lblEmpError);
 
         JPanel buttons = new JPanel(new FlowLayout());
         btnAdd.setFont(Util.LABEL_FONT);
@@ -76,13 +78,13 @@ public class AddGateAssignment extends JFrame implements ActionListener {
         getContentPane().add(buttons, BorderLayout.SOUTH);
     }
 
-    /** Fills the flight combo box with "number - route (departure time)". */
+    /** Fills the flight combo box with "number - route (departure time)"; cancelled flights are left out. */
     private void loadFlights() {
         try {
             Util.fillCombo(dbCon, cmbFlight, flightNos,
                     "SELECT flight_number, flight_number || ' - ' || dept_airport || ' to ' || arr_airport "
                     + "|| ' (' || TO_CHAR(dept_time, 'YYYY-MM-DD HH24:MI') || ')' "
-                    + "FROM flight ORDER BY dept_time", null);
+                    + "FROM flight WHERE status <> 'Cancelled' ORDER BY dept_time", null);
         } catch (SQLException e) {
             Util.sqlError(this, "loading flights.", e);
         }
@@ -110,17 +112,18 @@ public class AddGateAssignment extends JFrame implements ActionListener {
         }
     }
 
-    /** Fills the employee combo box (the first item means no employee). */
+    /** Fills the employee combo box with "name (airport)". */
     private void loadEmployees() {
         try {
             Util.fillCombo(dbCon, cmbEmployee, empIds,
-                    Util.EMPLOYEE_NAMES_SQL + "ORDER BY first_name, last_name", "(No employee)");
+                    "SELECT emp_id, first_name || ' ' || last_name || ' (' || airport_code || ')' "
+                    + "FROM a_employee ORDER BY first_name, last_name", null);
         } catch (SQLException e) {
             Util.sqlError(this, "loading employees.", e);
         }
     }
 
-    /** Clears the selections and the error label. */
+    /** Clears the selections and the error labels. */
     private void clearFields() {
         if (cmbFlight.getItemCount() > 0) {
             cmbFlight.setSelectedIndex(0);
@@ -130,14 +133,16 @@ public class AddGateAssignment extends JFrame implements ActionListener {
             cmbEmployee.setSelectedIndex(0);
         }
         lblGateError.setVisible(false);
+        lblEmpError.setVisible(false);
         pack();
     }
 
-    /** Checks for duplicates and inserts the gate assignment. */
+    /** Checks the rules and inserts the gate assignment. */
     private void addAssignment() {
         lblGateError.setVisible(false);
+        lblEmpError.setVisible(false);
         if (cmbFlight.getSelectedIndex() < 0) {
-            Util.error(this, "There are no flights to assign.");
+            Util.error(this, "There are no flights to assign (cancelled flights are not listed).");
             return;
         }
         if (cmbGate.getSelectedIndex() < 0) {
@@ -145,17 +150,29 @@ public class AddGateAssignment extends JFrame implements ActionListener {
             pack();
             return;
         }
+        if (cmbEmployee.getSelectedIndex() < 0) {
+            Util.showFieldError(lblEmpError, "Add an employee first");
+            pack();
+            return;
+        }
         String flightNo = flightNos.get(cmbFlight.getSelectedIndex());
         String[] gate = gateKeys.get(cmbGate.getSelectedIndex()).split("\\|");
         String code = gate[0];
         String gateNo = gate[1];
-        Integer emp = Util.toInt(empIds.get(cmbEmployee.getSelectedIndex())); // null when "No employee"
+        Integer emp = Integer.valueOf(empIds.get(cmbEmployee.getSelectedIndex()));
         try {
-            // the primary key is (flight_number, airport_code, gate_no): check it first
+            // the employee must work at the airport of the chosen gate
+            if (Util.count(dbCon, "SELECT COUNT(*) FROM a_employee WHERE emp_id = ? AND airport_code = ?",
+                    emp, code) == 0) {
+                Util.showFieldError(lblEmpError, "This employee does not work at " + code);
+                pack();
+                return;
+            }
+            // the primary key is (flight_number, airport_code, gate_no, emp_id): check it first
             if (Util.count(dbCon, "SELECT COUNT(*) FROM gate_assignment "
-                    + "WHERE flight_number = ? AND airport_code = ? AND gate_no = ?",
-                    Integer.valueOf(flightNo), code, gateNo) > 0) {
-                Util.showFieldError(lblGateError, "This flight is already assigned to this gate");
+                    + "WHERE flight_number = ? AND airport_code = ? AND gate_no = ? AND emp_id = ?",
+                    Integer.valueOf(flightNo), code, gateNo, emp) > 0) {
+                Util.showFieldError(lblEmpError, "This employee is already assigned to this flight at this gate");
                 pack();
                 return;
             }
@@ -178,6 +195,7 @@ public class AddGateAssignment extends JFrame implements ActionListener {
         } else if (src == cmbFlight) {
             loadGates();
             lblGateError.setVisible(false);
+            lblEmpError.setVisible(false);
             pack();
         }
     }

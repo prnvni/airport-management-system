@@ -204,7 +204,7 @@ public class Dashboard extends JFrame implements ActionListener {
         };
         setContentPane(sky);
         sky.add(top, BorderLayout.NORTH);
-        sky.add(cardScroll, BorderLayout.CENTER);
+        sky.add(cards, BorderLayout.CENTER);
         sky.add(bottom, BorderLayout.SOUTH);
     }
 

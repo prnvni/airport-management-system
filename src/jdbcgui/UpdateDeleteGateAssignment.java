@@ -19,10 +19,13 @@ import javax.swing.WindowConstants;
 /**
  * UpdateDeleteGateAssignment: form used to browse (Next / Previous), update
  * and delete rows of the GATE_ASSIGNMENT table. The flight cannot be changed
- * (it is part of the primary key and is what the assignment is about), but
- * the flight can be moved to another gate of its departure or arrival
- * airport and the employee can be changed. Both update and delete ask the
- * user to confirm first.
+ * (it is what the assignment is about), but the flight can be moved to
+ * another gate of its departure or arrival airport and the employee can be
+ * changed. The primary key is (flight_number, airport_code, gate_no, emp_id),
+ * so the row is always found using its old key. The employee must work at the
+ * airport of the gate, and the assignment of a cancelled flight cannot be
+ * changed (it can still be deleted). Update and delete ask the user to
+ * confirm first.
  */
 public class UpdateDeleteGateAssignment extends JFrame implements ActionListener {
 
@@ -35,6 +38,7 @@ public class UpdateDeleteGateAssignment extends JFrame implements ActionListener
     JComboBox<String> cmbGate = new JComboBox<String>();
     JComboBox<String> cmbEmployee = new JComboBox<String>();
     JLabel lblGateError = Util.makeErrorLabel();
+    JLabel lblEmpError = Util.makeErrorLabel();
     JButton btnPrevious = new JButton("< Previous");
     JButton btnNext = new JButton("Next >");
     JButton btnUpdate = new JButton("Update");
@@ -54,12 +58,12 @@ public class UpdateDeleteGateAssignment extends JFrame implements ActionListener
 
     /** Creates and lays out all the components of the form. */
     private void buildGui() {
-        txtFlight.setEditable(false); // part of the primary key: cannot be edited
+        txtFlight.setEditable(false); // the flight cannot be changed
 
         JPanel form = Util.makeFormPanel();
         Util.addRow(form, 0, "Flight:", txtFlight, null);
         Util.addRow(form, 1, "Gate:", cmbGate, lblGateError);
-        Util.addRow(form, 2, "Employee (optional):", cmbEmployee, null);
+        Util.addRow(form, 2, "Employee:", cmbEmployee, lblEmpError);
 
         JPanel buttons = new JPanel(new FlowLayout());
         JButton[] all = {btnPrevious, btnNext, btnUpdate, btnDelete};
@@ -88,7 +92,7 @@ public class UpdateDeleteGateAssignment extends JFrame implements ActionListener
             rs = dbCon.executeStatement("SELECT ga.flight_number, f.dept_airport, f.arr_airport, "
                     + "ga.airport_code, ga.gate_no, ga.emp_id "
                     + "FROM gate_assignment ga, flight f WHERE ga.flight_number = f.flight_number "
-                    + "ORDER BY ga.flight_number ASC, ga.airport_code ASC, ga.gate_no ASC");
+                    + "ORDER BY ga.flight_number ASC, ga.airport_code ASC, ga.gate_no ASC, ga.emp_id ASC");
             if (rs.last()) {
                 int total = rs.getRow();
                 rs.absolute(Math.max(1, Math.min(targetRow, total)));
@@ -110,6 +114,7 @@ public class UpdateDeleteGateAssignment extends JFrame implements ActionListener
         cmbEmployee.removeAllItems();
         empIds.clear();
         lblGateError.setVisible(false);
+        lblEmpError.setVisible(false);
     }
 
     /**
@@ -119,6 +124,7 @@ public class UpdateDeleteGateAssignment extends JFrame implements ActionListener
      */
     private void populateFields() throws SQLException {
         lblGateError.setVisible(false);
+        lblEmpError.setVisible(false);
 
         String flightNo = rs.getString("flight_number");
         String dept = rs.getString("dept_airport");
@@ -134,11 +140,12 @@ public class UpdateDeleteGateAssignment extends JFrame implements ActionListener
         cmbGate.setSelectedIndex(gateIdx < 0 ? 0 : gateIdx);
 
         Util.fillCombo(dbCon, cmbEmployee, empIds,
-                Util.EMPLOYEE_NAMES_SQL + "ORDER BY first_name, last_name", "(No employee)");
-        int empIdx = empIds.indexOf(rs.getString("emp_id")); // null finds the "(No employee)" item
+                "SELECT emp_id, first_name || ' ' || last_name || ' (' || airport_code || ')' "
+                + "FROM a_employee ORDER BY first_name, last_name", null);
+        int empIdx = empIds.indexOf(rs.getString("emp_id"));
         cmbEmployee.setSelectedIndex(empIdx < 0 ? 0 : empIdx);
 
-        pack(); // shrink the window back after the error label was shown
+        pack(); // shrink the window back after the error labels were shown
     }
 
     /** Enables / disables Next, Previous, Update and Delete depending on the current row. */
@@ -180,30 +187,55 @@ public class UpdateDeleteGateAssignment extends JFrame implements ActionListener
         enableDisableButtons();
     }
 
-    /** Asks for confirmation and updates the shown gate assignment (its gate and employee). */
+    /** Checks the rules, asks for confirmation and updates the shown gate assignment (its gate and employee). */
     private void updateAssignment() {
         lblGateError.setVisible(false);
+        lblEmpError.setVisible(false);
         if (cmbGate.getSelectedIndex() < 0) {
             Util.showFieldError(lblGateError, "Please select a gate");
+            pack();
+            return;
+        }
+        if (cmbEmployee.getSelectedIndex() < 0) {
+            Util.showFieldError(lblEmpError, "Please select an employee");
             pack();
             return;
         }
         String[] newGate = gateKeys.get(cmbGate.getSelectedIndex()).split("\\|");
         String newCode = newGate[0];
         String newGateNo = newGate[1];
-        Integer emp = Util.toInt(empIds.get(cmbEmployee.getSelectedIndex())); // null when "No employee"
+        Integer newEmp = Integer.valueOf(empIds.get(cmbEmployee.getSelectedIndex()));
         try {
             // the assignment as it is stored now (the key we are changing)
             Integer flightNo = Integer.valueOf(rs.getString("flight_number"));
             String oldCode = rs.getString("airport_code");
             String oldGateNo = rs.getString("gate_no");
+            Integer oldEmp = Integer.valueOf(rs.getString("emp_id"));
 
-            // if the gate changed, this flight must not already use the new gate
-            if ((!newCode.equals(oldCode) || !newGateNo.equals(oldGateNo))
-                    && Util.count(dbCon, "SELECT COUNT(*) FROM gate_assignment "
-                            + "WHERE flight_number = ? AND airport_code = ? AND gate_no = ?",
-                            flightNo, newCode, newGateNo) > 0) {
-                Util.showFieldError(lblGateError, "This flight is already assigned to this gate");
+            boolean changed = !newCode.equals(oldCode) || !newGateNo.equals(oldGateNo) || !newEmp.equals(oldEmp);
+            if (!changed) {
+                Util.info(this, "Nothing was changed.");
+                return;
+            }
+            // the assignment of a cancelled flight cannot be changed
+            if (Util.count(dbCon, "SELECT COUNT(*) FROM flight WHERE flight_number = ? AND status = 'Cancelled'",
+                    flightNo) > 0) {
+                Util.showFieldError(lblGateError, "Flight " + flightNo + " is cancelled, so this cannot be changed");
+                pack();
+                return;
+            }
+            // the employee must work at the airport of the chosen gate
+            if (Util.count(dbCon, "SELECT COUNT(*) FROM a_employee WHERE emp_id = ? AND airport_code = ?",
+                    newEmp, newCode) == 0) {
+                Util.showFieldError(lblEmpError, "This employee does not work at " + newCode);
+                pack();
+                return;
+            }
+            // the new key must not already exist
+            if (Util.count(dbCon, "SELECT COUNT(*) FROM gate_assignment "
+                    + "WHERE flight_number = ? AND airport_code = ? AND gate_no = ? AND emp_id = ?",
+                    flightNo, newCode, newGateNo, newEmp) > 0) {
+                Util.showFieldError(lblEmpError, "This employee is already assigned to this flight at this gate");
                 pack();
                 return;
             }
@@ -211,8 +243,8 @@ public class UpdateDeleteGateAssignment extends JFrame implements ActionListener
                 return; // user clicked No: nothing changes
             }
             Util.update(dbCon, "UPDATE gate_assignment SET airport_code = ?, gate_no = ?, emp_id = ? "
-                    + "WHERE flight_number = ? AND airport_code = ? AND gate_no = ?",
-                    newCode, newGateNo, emp, flightNo, oldCode, oldGateNo);
+                    + "WHERE flight_number = ? AND airport_code = ? AND gate_no = ? AND emp_id = ?",
+                    newCode, newGateNo, newEmp, flightNo, oldCode, oldGateNo, oldEmp);
             Util.info(this, "The gate assignment of flight " + flightNo + " was updated successfully.");
             loadData(currentRow());
         } catch (SQLException e) {
@@ -227,12 +259,13 @@ public class UpdateDeleteGateAssignment extends JFrame implements ActionListener
             Integer flightNo = Integer.valueOf(rs.getString("flight_number"));
             String code = rs.getString("airport_code");
             String gateNo = rs.getString("gate_no");
+            Integer emp = Integer.valueOf(rs.getString("emp_id"));
             if (!Util.confirm(this, "Delete the assignment of flight " + flightNo + " to gate "
-                    + gateNo + " at " + code + "?", "Confirm Delete")) {
+                    + gateNo + " at " + code + " (employee " + emp + ")?", "Confirm Delete")) {
                 return; // user clicked No: nothing changes
             }
             Util.update(dbCon, "DELETE FROM gate_assignment WHERE flight_number = ? "
-                    + "AND airport_code = ? AND gate_no = ?", flightNo, code, gateNo);
+                    + "AND airport_code = ? AND gate_no = ? AND emp_id = ?", flightNo, code, gateNo, emp);
             Util.info(this, "The gate assignment was deleted successfully.");
             loadData(currentRow());
         } catch (SQLException e) {
