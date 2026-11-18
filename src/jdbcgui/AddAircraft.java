@@ -109,7 +109,10 @@ public class AddAircraft extends JFrame implements ActionListener {
         }
         clearErrorLabels();
     }
-
+    /** True if the text is 1 to 40 characters and contains at least one letter. */
+    static boolean isModelText(String s) {
+        return s.length() >= 1 && s.length() <= 40 && s.matches(".*[A-Za-z].*");
+    }
     /**
      * Checks all the fields. Shows an error label for every invalid field
      * and returns true only if everything is valid.
@@ -122,8 +125,8 @@ public class AddAircraft extends JFrame implements ActionListener {
             Util.showFieldError(lblIdError, "ID must be a whole number from 1 to 999999");
             ok = false;
         }
-        if (model.length() < 1 || model.length() > 40) {
-            Util.showFieldError(lblModelError, "Model must be 1 to 40 characters");
+        if (!isModelText(model)) {
+            Util.showFieldError(lblModelError, "Model must be text with at least one letter (1 to 40 characters)");
             ok = false;
         }
         if (!capacity.matches("[0-9]{1,4}") || Integer.parseInt(capacity) == 0) {

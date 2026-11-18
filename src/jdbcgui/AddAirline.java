@@ -81,8 +81,11 @@ public class AddAirline extends JFrame implements ActionListener {
         txtCountry.setText("");
         clearErrorLabels();
     }
-
-    /** Checks all the fields; shows an error label for every invalid field. */
+    /** True if the text is 1 to 60 characters and contains at least one letter. */
+    static boolean isNameText(String s) {
+        return s.length() >= 1 && s.length() <= 60 && s.matches(".*\\p{L}.*");
+    }
+        /** Checks all the fields; shows an error label for every invalid field. */
     private boolean validateInput(String code, String name, String country) {
         boolean ok = true;
         clearErrorLabels();
@@ -91,8 +94,8 @@ public class AddAirline extends JFrame implements ActionListener {
             Util.showFieldError(lblCodeError, "Code must be 2 or 3 letters/digits");
             ok = false;
         }
-        if (name.length() < 1 || name.length() > 60) {
-            Util.showFieldError(lblNameError, "Name must be 1 to 60 characters");
+        if (!isNameText(name)) {
+            Util.showFieldError(lblNameError, "Name must be text with at least one letter (1 to 60 characters)");
             ok = false;
         }
         if (country.length() < 1 || country.length() > 40 || !country.matches("[\\p{L}][\\p{L} .'-]*")) {

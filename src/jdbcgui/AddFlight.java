@@ -190,6 +190,10 @@ public class AddFlight extends JFrame implements ActionListener {
             Util.showFieldError(lblToError, "Departure and arrival airports must be different");
             ok = false;
         }
+        if (dept != null && dept.isBefore(LocalDateTime.now())) {
+            Util.showFieldError(lblDeptError, "Departure can't be in the past");
+            ok = false;
+        }
         return ok;
     }
 

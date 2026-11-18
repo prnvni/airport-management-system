@@ -110,6 +110,15 @@ public class AddAirport extends JFrame implements ActionListener {
         }
         clearErrorLabels();
     }
+        /** Name: 1 to 80 characters with at least one letter (digits are allowed). */
+    static boolean isNameText(String s) {
+        return s.length() >= 1 && s.length() <= 80 && s.matches(".*\\p{L}.*");
+    }
+
+    /** City / country: 1 to 40 characters, letters, spaces, . ' - only (no digits). */
+    static boolean isPlaceText(String s) {
+        return s.length() >= 1 && s.length() <= 40 && s.matches("[\\p{L}][\\p{L} .'-]*");
+    }
 
     /**
      * Checks all the fields. Shows an error label for every invalid field
@@ -123,16 +132,16 @@ public class AddAirport extends JFrame implements ActionListener {
             Util.showFieldError(lblCodeError, "Code must be exactly 3 letters");
             ok = false;
         }
-        if (name.length() < 1 || name.length() > 80) {
-            Util.showFieldError(lblNameError, "Name must be 1 to 80 characters");
+        if (!isNameText(name)) {
+            Util.showFieldError(lblNameError, "Name must be text with at least one letter (1 to 80 characters)");
             ok = false;
         }
-        if (city.length() < 1 || city.length() > 40) {
-            Util.showFieldError(lblCityError, "City must be 1 to 40 characters");
+        if (!isPlaceText(city)) {
+            Util.showFieldError(lblCityError, "City must be text (1 to 40 letters, no numbers)");
             ok = false;
         }
-        if (country.length() < 1 || country.length() > 40) {
-            Util.showFieldError(lblCountryError, "Country must be 1 to 40 characters");
+        if (!isPlaceText(country)) {
+            Util.showFieldError(lblCountryError, "Country must be text (1 to 40 letters, no numbers)");
             ok = false;
         }
         return ok;
